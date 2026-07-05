@@ -4,6 +4,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -17,17 +18,24 @@ from app.schemas import (
     ZoneCreate,
     ZoneResponse,
 )
+from app.services.ppe_detector import ModelConfigurationError, PPEDetector
+from app.services.video_analysis import analyse_video
+
+
+incident_directory = settings.data_dir / "incident_images"
+incident_directory.mkdir(parents=True, exist_ok=True)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     settings.data_dir.mkdir(parents=True, exist_ok=True)
-    (settings.data_dir / "incident_images").mkdir(parents=True, exist_ok=True)
+    (settings.data_dir / "uploads").mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
     yield
 
 
-app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+app = FastAPI(title=settings.app_name, version="0.2.0", lifespan=lifespan)
+app.mount("/evidence", StaticFiles(directory=incident_directory), name="evidence")
 
 app.add_middleware(
     CORSMiddleware,
@@ -90,7 +98,7 @@ def list_zones(db: Session = Depends(get_db)) -> list[ZoneResponse]:
 
 @app.post(f"{settings.api_prefix}/events", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_manual_event(payload: EventCreate, db: Session = Depends(get_db)) -> EventResponse:
-    """Temporary endpoint for testing the dashboard before model integration."""
+    """Temporary endpoint for dashboard verification before model integration."""
     event = SafetyEvent(**payload.model_dump())
     db.add(event)
     db.commit()
@@ -105,8 +113,13 @@ def list_events(db: Session = Depends(get_db)) -> list[EventResponse]:
 
 
 @app.post(f"{settings.api_prefix}/analysis/video", response_model=AnalysisResponse)
-async def analyze_video(file: UploadFile = File(...)) -> AnalysisResponse:
-    """Validates the upload path; PPE inference is added after authorised model setup."""
+async def analyze_video(file: UploadFile = File(...), db: Session = Depends(get_db)) -> AnalysisResponse:
+    """Analyse one local test video and retain only violation evidence images.
+
+    The endpoint processes synchronously for the MVP. Use short, authorised test
+    clips only; a production version requires a background worker and review flow.
+    """
+
     allowed_suffixes = {".mp4", ".avi", ".mov", ".mkv"}
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in allowed_suffixes:
@@ -116,11 +129,55 @@ async def analyze_video(file: UploadFile = File(...)) -> AnalysisResponse:
             status_code=503,
             detail=(
                 "PPE model is not configured. Add an authorised custom model path in "
-                "backend/.env before analysis."
+                "backend/.env and install requirements-vision.txt before analysis."
             ),
         )
 
-    return AnalysisResponse(
-        status="queued",
-        message="Video accepted. Full inference worker is the next build task.",
-    )
+    zones = db.scalars(select(SafetyZone)).all()
+    if not zones:
+        raise HTTPException(
+            status_code=422,
+            detail="Create at least one configured safety zone before analysing a video.",
+        )
+
+    upload_path = settings.data_dir / "uploads" / f"upload_{Path(file.filename).name}"
+    max_upload_bytes = 100 * 1024 * 1024
+    bytes_written = 0
+
+    try:
+        with upload_path.open("wb") as destination:
+            while chunk := await file.read(1024 * 1024):
+                bytes_written += len(chunk)
+                if bytes_written > max_upload_bytes:
+                    raise HTTPException(status_code=413, detail="Video must be smaller than 100 MB for the MVP.")
+                destination.write(chunk)
+
+        detector = PPEDetector(settings.model_path)
+        result = analyse_video(upload_path, detector, zones, incident_directory)
+
+        for generated in result.events:
+            db.add(
+                SafetyEvent(
+                    event_type=generated.event_type,
+                    severity=generated.severity,
+                    message=generated.message,
+                    source_name=file.filename,
+                    evidence_path=generated.evidence_path,
+                )
+            )
+        db.commit()
+
+        return AnalysisResponse(
+            status="completed",
+            message="Analysis finished. Review generated events before taking any safety action.",
+            processed_frames=result.processed_frames,
+            events_created=len(result.events),
+        )
+    except ModelConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    finally:
+        if upload_path.exists():
+            upload_path.unlink()
+        await file.close()
