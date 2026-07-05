@@ -37,3 +37,5 @@ class EventResponse(EventCreate):
 class AnalysisResponse(BaseModel):
     status: str
     message: str
+    processed_frames: int = 0
+    events_created: int = 0
