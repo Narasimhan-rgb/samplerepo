@@ -52,6 +52,18 @@ Record the following for every run:
 - False alarms after supervisor review
 - Obvious missed violations found during manual comparison
 
+## Dashboard evaluation summary
+
+The dashboard calls `GET /api/v1/evaluation/summary` and calculates these values from supervisor-reviewed **real** video events:
+
+```text
+Precision = confirmed violations / (confirmed violations + false alarms)
+
+Review rate = reviewed real events / generated real events
+```
+
+Seeded `DEMO ONLY` records are excluded from these values. The endpoint deliberately does not calculate an accuracy percentage or recall because missed violations require the manual ground-truth log.
+
 ## Basic metrics
 
 Use the supervisor-reviewed event log to calculate:
@@ -87,4 +99,5 @@ Before describing the prototype as an end-to-end MVP, retain:
 - [ ] Generated events appear in the dashboard.
 - [ ] A supervisor can mark each event as confirmed, false alarm, or unclear.
 - [ ] CSV export includes review outcomes.
+- [ ] Evaluation summary excludes demo events from validation metrics.
 - [ ] No raw footage, private data, or model weights are committed.
