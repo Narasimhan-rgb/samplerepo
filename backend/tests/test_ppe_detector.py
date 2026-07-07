@@ -1,6 +1,6 @@
 import unittest
 
-from app.services.ppe_detector import Detection, missing_ppe_for_person
+from app.services.ppe_detector import Detection, canonical_label, missing_ppe_for_person
 
 
 class PpeAssociationTests(unittest.TestCase):
@@ -45,6 +45,14 @@ class PpeAssociationTests(unittest.TestCase):
             missing_ppe_for_person(self.person, detections, ["helmet", "vest"]),
             ["helmet", "vest"],
         )
+
+    def test_common_model_labels_are_normalised(self):
+        self.assertEqual(canonical_label("Hardhat"), "helmet")
+        self.assertEqual(canonical_label("Safety Vest"), "vest")
+        self.assertEqual(canonical_label("Worker"), "person")
+
+    def test_negative_label_is_not_treated_as_protective_equipment(self):
+        self.assertEqual(canonical_label("NO-Hardhat"), "no-hardhat")
 
 
 if __name__ == "__main__":
