@@ -8,6 +8,7 @@ FastAPI backend for the Phase 1 local MVP.
 - Stores reviewable safety events in SQLite.
 - Exports event metadata as CSV.
 - Checks local MVP readiness before analysis.
+- Provides clearly labelled local demo records for dashboard walkthroughs.
 - Analyses authorised short videos only after an authorised PPE model is configured.
 
 ## Local setup on Windows
@@ -22,6 +23,28 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 Open API documentation at `http://127.0.0.1:8000/docs`.
+
+## First-run demo without a PPE model
+
+The dashboard can be demonstrated before model integration using local sample records.
+
+1. Keep this in `backend/.env`:
+
+```text
+DEMO_MODE=true
+```
+
+2. With the virtual environment active, seed local sample data:
+
+```powershell
+python -m app.seed_demo
+```
+
+3. Start the frontend and open the dashboard. You will see a demo safety zone and two events explicitly marked `DEMO ONLY`.
+
+4. Mark one event as **Confirmed violation**, **False alarm**, or **Unclear** to test the review workflow and CSV report.
+
+Demo records do not come from a camera, AI model, or video analysis. They are only for verifying the local UI and database flow.
 
 ## Before video analysis
 
