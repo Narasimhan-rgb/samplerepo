@@ -22,6 +22,7 @@ from app.schemas import (
     ZoneResponse,
 )
 from app.services.ppe_detector import ModelConfigurationError, PPEDetector
+from app.services.readiness import build_readiness
 from app.services.video_analysis import analyse_video
 
 
@@ -37,7 +38,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title=settings.app_name, version="0.3.0", lifespan=lifespan)
+app = FastAPI(title=settings.app_name, version="0.4.0", lifespan=lifespan)
 app.mount("/evidence", StaticFiles(directory=incident_directory), name="evidence")
 
 app.add_middleware(
@@ -127,6 +128,12 @@ def safety_metrics(db: Session = Depends(get_db)) -> dict[str, int]:
         "events_last_24h": sum(event.created_at >= cutoff for event in events),
         "configured_zones": zones_count,
     }
+
+
+@app.get(f"{settings.api_prefix}/readiness")
+def readiness(db: Session = Depends(get_db)) -> dict[str, object]:
+    """Shows local prerequisites before a Phase 1 test-video run."""
+    return build_readiness(db)
 
 
 @app.get(f"{settings.api_prefix}/reports/events.csv")
