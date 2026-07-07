@@ -34,6 +34,23 @@ Dashboard, report and alerts
 
 Planned stack: Python, OpenCV, a custom PPE model, FastAPI, SQLite/PostgreSQL, React, and local edge deployment.
 
+## Windows quick start: dashboard demo
+
+Install Python 3.11+ and Node.js LTS once. Then open Command Prompt in the repository folder and run:
+
+```cmd
+git pull origin main
+run-demo.cmd
+```
+
+The launcher creates the Python environment, installs local packages, creates clearly labelled demo records, starts the FastAPI backend and React frontend in separate windows, and opens:
+
+```text
+http://localhost:5173
+```
+
+Keep both service windows open while using the dashboard. This mode uses only local demo events; it does not claim real PPE detection.
+
 ## Run modes
 
 ### Dashboard demo mode
