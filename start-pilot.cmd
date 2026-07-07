@@ -7,6 +7,7 @@ set "ROOT=%~dp0"
 set "BACKEND=%ROOT%backend"
 set "FRONTEND=%ROOT%frontend"
 set "VENV_PYTHON=%BACKEND%\.venv\Scripts\python.exe"
+set "MODEL_PATH="
 
 if not exist "%VENV_PYTHON%" (
     echo ERROR: Backend environment was not found.
@@ -21,9 +22,20 @@ if not exist "%BACKEND%\.env" (
     exit /b 1
 )
 
-findstr /r /c:"^[ ]*MODEL_PATH[ ]*=[ ]*.[^ ]*" "%BACKEND%\.env" >nul
-if errorlevel 1 (
+REM Read the value after MODEL_PATH=. This supports Windows paths containing spaces.
+for /f "tokens=1,* delims==" %%A in ('findstr /r /i /c:"^[ ]*MODEL_PATH[ ]*=" "%BACKEND%\.env"') do set "MODEL_PATH=%%B"
+
+if not defined MODEL_PATH (
     echo ERROR: MODEL_PATH is missing or empty in backend\.env.
+    echo Add your authorised PPE model path, for example:
+    echo MODEL_PATH=D:\models\ppe-model.pt
+    pause
+    exit /b 1
+)
+
+if not exist "%MODEL_PATH%" (
+    echo ERROR: The PPE model file was not found:
+    echo %MODEL_PATH%
     pause
     exit /b 1
 )
