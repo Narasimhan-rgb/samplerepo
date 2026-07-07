@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./app/data/safeaudit.db"
     model_path: str | None = None
     allowed_origins: str = "http://localhost:5173"
+    demo_mode: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
