@@ -11,16 +11,19 @@ input, select { font: inherit; }
 
 .page { max-width: 1100px; margin: 0 auto; padding: 40px 20px 64px; }
 .header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 28px; }
+.header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; margin: 0 0 8px; }
 h1 { margin: 0; font-size: 40px; }
 h2 { margin: 0; }
 .subtitle { color: #5a6476; margin: 8px 0 0; }
 button { border: 0; padding: 12px 16px; border-radius: 8px; background: #172033; color: #fff; font-weight: 700; }
 button:disabled { cursor: not-allowed; opacity: .6; }
+.demo-pill { border-radius: 99px; padding: 7px 10px; background: #fff0c2; color: #6a4b0a; font-weight: 800; font-size: 12px; letter-spacing: .06em; }
+.secondary-button { border: 1px solid #cfd7e5; border-radius: 8px; padding: 11px 14px; background: #fff; text-decoration: none; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .cards article, .panel { background: #fff; border: 1px solid #e5e9f0; border-radius: 12px; padding: 20px; }
-.cards span { display: block; color: #5a6476; font-size: 14px; }
-.cards strong { display: block; font-size: 28px; margin-top: 8px; }
+.cards span, .evaluation-grid span { display: block; color: #5a6476; font-size: 14px; }
+.cards strong, .evaluation-grid strong { display: block; font-size: 28px; margin-top: 8px; }
 .workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
 .form-panel p, .panel-heading p, .hint, .readiness p { color: #5a6476; line-height: 1.5; }
 .form-panel label { display: grid; gap: 7px; color: #26334b; font-size: 14px; font-weight: 700; margin: 16px 0; }
@@ -30,6 +33,9 @@ button:disabled { cursor: not-allowed; opacity: .6; }
 .zone-list p { margin: 12px 0 0; font-size: 14px; }
 .notice { color: #155e38; background: #e7f7ee; border: 1px solid #b8e6cb; border-radius: 8px; padding: 12px 14px; }
 .panel-heading { margin-bottom: 16px; }
+.evaluation-panel { margin-bottom: 18px; }
+.evaluation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.evaluation-grid article { border: 1px solid #edf0f5; border-radius: 10px; padding: 16px; background: #fbfcff; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 850px; }
 th, td { text-align: left; border-bottom: 1px solid #edf0f5; padding: 12px 10px; font-size: 14px; vertical-align: top; }
