@@ -50,3 +50,16 @@ class AnalysisResponse(BaseModel):
     message: str
     processed_frames: int = 0
     events_created: int = 0
+
+
+class EvaluationSummary(BaseModel):
+    real_events: int
+    demo_events: int
+    reviewed_real_events: int
+    confirmed_violations: int
+    false_alarms: int
+    unclear_events: int
+    precision: float | None = None
+    review_rate: float
+    ready_for_reporting: bool
+    note: str
