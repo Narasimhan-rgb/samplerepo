@@ -16,6 +16,7 @@ from app.database import Base, engine, get_db
 from app.models import SafetyEvent, SafetyEventReview, SafetyZone
 from app.schemas import (
     AnalysisResponse,
+    EvaluationSummary,
     EventCreate,
     EventResponse,
     EventReviewCreate,
@@ -23,6 +24,7 @@ from app.schemas import (
     ZoneCreate,
     ZoneResponse,
 )
+from app.services.evaluation import build_evaluation_summary
 from app.services.ppe_detector import ModelConfigurationError, PPEDetector
 from app.services.readiness import build_readiness
 from app.services.video_analysis import analyse_video
@@ -40,7 +42,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title=settings.app_name, version="0.5.0", lifespan=lifespan)
+app = FastAPI(title=settings.app_name, version="0.6.0", lifespan=lifespan)
 app.mount("/evidence", StaticFiles(directory=incident_directory), name="evidence")
 
 app.add_middleware(
@@ -179,6 +181,14 @@ def safety_metrics(db: Session = Depends(get_db)) -> dict[str, int]:
         "confirmed_violations": sum(review.verdict == "confirmed_violation" for review in reviews),
         "false_alarms": sum(review.verdict == "false_alarm" for review in reviews),
     }
+
+
+@app.get(f"{settings.api_prefix}/evaluation/summary", response_model=EvaluationSummary)
+def evaluation_summary(db: Session = Depends(get_db)) -> EvaluationSummary:
+    """Return review-based MVP metrics while excluding seeded demo records."""
+    events = db.scalars(select(SafetyEvent)).all()
+    reviews = db.scalars(select(SafetyEventReview)).all()
+    return EvaluationSummary(**build_evaluation_summary(events, reviews))
 
 
 @app.get(f"{settings.api_prefix}/readiness")
